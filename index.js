@@ -16,7 +16,7 @@ class Level
         this.menuX=x;
         this.menuY=y;
         this.isFinished=false;
-        this.timeLastSpawn=20;
+        this.timeLastSpawn=100;
         this.size=25;
         this.enemy=[];
     }
@@ -48,16 +48,18 @@ class Enemy
         this.health=health;
         this.size=40;
     }
-    paint()
-    {
-    
-        ctx.beginPath();
-        ctx.ellipse(this.x, this.y, this.size, this.size, 0, 0, 2 * Math.PI);
-        ctx.fill();
-    }
     isTouching(x,y)
     {
         return (Math.sqrt(Math.pow(this.x-x,2)+Math.pow(this.y-y,2))<this.size);
+    }
+}
+class EnemyBasic extends Enemy
+{
+    paint()
+    {
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y, this.size, this.size, 0, 0, 2 * Math.PI);
+        ctx.fill();
     }
 }
 let inMenu=true;
@@ -67,7 +69,7 @@ let live=10;
 addEventListener("click",onClick);
 addEventListener("mousemove",onMouseMove);
 let levels=[
-    new Level(500,500,100,400.0,1,1,1,5,900,500)
+    new Level(500,500,150,400.0,1,1,1,5,1800,850)
 ];
 goToMap();
 function onMouseMove(event)
@@ -122,20 +124,20 @@ function moveEnemy(enemy,level)
 }
 function spawn(level)
 {
-    let spawnOdds = level.enemyBasic*level.timeLastSpawn/Math.pow(level.duration,2);
+    let spawnOdds = level.enemyBasic*level.timeLastSpawn/Math.pow(level.duration,2.25);
+    
     if (Math.random()<spawnOdds)
     {
         timeMult=(400-level.duration)/level.maxDuration*(level.maxTimeMult-1)+1;
-        console.log(level.duration);
+        console.log(level.duration,spawnOdds,level.enemyBasic);
         level.enemyBasic-=1;
         level.timeLastSpawn=0;
         if (Math.random()>=.5)
-            level.enemy.push(new Enemy(Math.random()*1910.0,0.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));
-        else
-            level.enemy.push(new Enemy(-50.0,Math.random()*900.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));
-        
+            level.enemy.push(new EnemyBasic(Math.random()*1800.0,-50.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));
+        else 
+            level.enemy.push(new EnemyBasic(-50.0,Math.random()*850.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));  
     }
-    level.timeLastSpawn+=.2;
+    level.timeLastSpawn+=.25;
     level.duration-=.05;
 }
 function paintBackgroundLevel()
