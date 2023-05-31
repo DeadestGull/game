@@ -131,7 +131,6 @@ function spawn(level)
         timeMult=(400-level.duration)/level.maxDuration*(level.maxTimeMult-1)+1;
         console.log(level.duration,spawnOdds,level.enemyBasic);
         level.enemyBasic-=1;
-        level.timeLastSpawn=0;
         if (Math.random()>=.5)
             level.enemy.push(new EnemyBasic(Math.random()*1800.0,-50.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));
         else 
