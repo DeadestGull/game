@@ -62,6 +62,37 @@ class EnemyBasic extends Enemy
         ctx.fill();
     }
 }
+class Character
+{
+    constructor(x,y,damage,attackSpeed,size)
+    {
+        this.x=x;
+        this.y=y;
+        this.damage=damage;
+        this.attackSpeed=attackSpeed;
+        this.hover=true;
+    }
+    
+}
+class Fire1 extends Character
+{
+    constructor(x,y)
+    {
+        let startingDamage=1;
+        startingAttackSpeed=2;
+        super(x,y,startingDamage,startingAttackSpeed,20);
+        this.cost=100;
+    }
+    paint()
+    {
+        if (super.hover)
+        {
+            ctx.globalAlpha =.4;
+            ctx.drawImage(document.getElementById("Fire1"),x,y);
+            ctx.globalAlpha = 1;
+        }
+    }
+}
 let inMenu=true;
 let mouseX=-1;
 let mouseY=-1;
