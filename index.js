@@ -64,10 +64,11 @@ class EnemyBasic extends Enemy
 }
 class Character
 {
-    constructor(x,y,damage,attackSpeed,size)
+    constructor(x,y,damage,attackSpeed,size,health)
     {
         this.x=x;
         this.y=y;
+        this.health=health;
         this.damage=damage;
         this.attackSpeed=attackSpeed;
         this.hover=true;
@@ -86,16 +87,15 @@ class Character
     }
     
 }
-class Fire1 extends Character
+class Earth1 extends Character
 {
     constructor(x,y)
     {
-        super(x,y,1,2,35);
+        super(x,y,1,2,35,10);
         this.cost=100;
     }
     paint()
     {
-
         if (this.hover)
             ctx.globalAlpha =.4;
         /*let img = new Image();
@@ -103,18 +103,66 @@ class Fire1 extends Character
         ctx.drawImage(img,this.x,this.y);
         */
        ctx.beginPath();
-        ctx.fillStyle="red";
+        ctx.fillStyle="brown";
         ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
         ctx.fill();
         ctx.globalAlpha = 1;
         ctx.fillStyle="black";
     }
 }
+class Earth2 extends Character
+{
+    constructor(x,y)
+    {
+        super(x,y,5,3,45,55);
+        this.cost=250;
+    }
+    paint()
+    {
+        if (this.hover)
+            ctx.globalAlpha =.4;
+        /*let img = new Image();
+        img.src="images/imageTest.png";
+        ctx.drawImage(img,this.x,this.y);
+        */
+       ctx.beginPath();
+        ctx.fillStyle="brown";
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle="black";
+    }
+}
+class Earth3 extends Character
+{
+    constructor(x,y)
+    {
+        super(x,y,1,.5,35,20);
+        this.cost=250;
+    }
+    paint()
+    {
+        if (this.hover)
+            ctx.globalAlpha =.4;
+        /*let img = new Image();
+        img.src="images/imageTest.png";
+        ctx.drawImage(img,this.x,this.y);
+        */
+       ctx.beginPath();
+        ctx.fillStyle="brown";
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle="black";
+    }
+}
+
+
 let inMenu=true;
 let mouseX=-1;
 let mouseY=-1;
 let live=10;
-let money=500;
+let money=500000;
 let buyMenu=false;
 addEventListener("click",onClick);
 addEventListener("mousemove",onMouseMove);
@@ -166,8 +214,14 @@ function checkBuy(e)
         if (e.clientX-8>=1712&&e.clientX-8<=1762&&e.clientY-8>=375&&e.clientY-8<=525)//closeMenu
             buyMenu=false;
         
-        if (e.clientX-8>=1763&&e.clientX-8<=1812&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy fire1
-            characterHover = new Fire1(mouseX,mouseY);
+        if (e.clientX-8>=1763&&e.clientX-8<=1812&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Earth 1
+            characterHover = new Earth1(mouseX,mouseY);
+
+        if (e.clientX-8>=1813&&e.clientX-8<=1862&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Earth 2
+            characterHover = new Earth2(mouseX,mouseY);
+        
+        if (e.clientX-8>=1863&&e.clientX-8<=1912&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Earth 3
+            characterHover = new Earth3(mouseX,mouseY);
     }
     else
     {
@@ -194,6 +248,35 @@ function onTick(level)
     paintEnemy(level);
     moveCharacters();
     paintCharacters();
+    paintMenu();
+}
+function paintMenu()
+{
+    if (buyMenu)
+    {
+        ctx.beginPath();
+        ctx.strokeStyle="brown";
+        ctx.rect(1863,400,50,100);
+        ctx.rect(1813,400,50,100);
+        ctx.rect(1763,400,50,100);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.strokeStyle="black";
+        ctx.rect(1863,500,50,100);
+        ctx.rect(1813,500,50,100);
+        ctx.rect(1763,500,50,100);
+        ctx.rect(1863,300,50,100);
+        ctx.rect(1813,300,50,100);
+        ctx.rect(1763,300,50,100);
+        ctx.stroke();
+        ctx.fillRect(1712,375,50,150);
+    }
+    else
+    {
+        ctx.beginPath();
+        ctx.rect(1862,375,50,150);
+        ctx.fill();
+    }
 }
 function moveCharacters()
 {
@@ -211,8 +294,18 @@ function paintCharacters()
 }
 function moveEnemy(enemy,level)
 {
-    
-    angle = Math.atan2(level.targetY-enemy.y,level.targetX-enemy.x);
+    let cc=characters[0];
+    characters.forEach(a=>
+    {
+        if (Math.sqrt(Math.pow(enemy.y-a.y,2)+Math.pow(enemy.x-a.x,2))<Math.sqrt(Math.pow(enemy.y-cc.y,2)+Math.pow(enemy.x-cc.x,2)))
+            cc=a;
+    }
+    );
+    console.log(cc);
+    if (cc!=null&&Math.sqrt(Math.pow(enemy.y-cc.y,2)+Math.pow(enemy.x-cc.x,2))<225)//pull distance
+        angle = Math.atan2(cc.y-enemy.y,cc.x-enemy.x);
+    else
+        angle = Math.atan2(level.targetY-enemy.y,level.targetX-enemy.x);
     enemy.x+=enemy.speed*Math.cos(angle);
     enemy.y+=enemy.speed*Math.sin(angle);
     if (enemy.isTouching(level.targetX,level.targetY))
@@ -243,27 +336,7 @@ function spawn(level)
 function paintBackgroundLevel()
 {
     ctx.reset();
-    if (buyMenu)
-    {
-        ctx.beginPath();
-        ctx.rect(1862,400,50,100);
-        ctx.rect(1812,400,50,100);
-        ctx.rect(1762,400,50,100);
-        ctx.rect(1862,500,50,100);
-        ctx.rect(1812,500,50,100);
-        ctx.rect(1762,500,50,100);
-        ctx.rect(1862,300,50,100);
-        ctx.rect(1812,300,50,100);
-        ctx.rect(1762,300,50,100);
-        ctx.stroke();
-        ctx.fillRect(1712,375,50,150);
-    }
-    else
-    {
-        ctx.beginPath();
-        ctx.rect(1862,375,50,150);
-        ctx.fill();
-    }
+    
     //draw background here
    
 
