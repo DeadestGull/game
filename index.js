@@ -86,21 +86,23 @@ class Fire1 extends Character
     paint()
     {
         if (super.hover)
-        {
             ctx.globalAlpha =.4;
-            ctx.drawImage(document.getElementById("Fire1"),x,y);
-            ctx.globalAlpha = 1;
-        }
+        let img = new Image();
+        img.scr = 'images/imageTest.png';
+        ctx.drawImage(img,x,y);
+        ctx.globalAlpha = 1;
     }
 }
 let inMenu=true;
 let mouseX=-1;
 let mouseY=-1;
 let live=10;
+let money=500;
+let buyMenu=false;
 addEventListener("click",onClick);
 addEventListener("mousemove",onMouseMove);
 let levels=[
-    new Level(500,500,150,400.0,1,1,1,5,1800,850)
+    new Level(500,500,150,400.0,1,1,1,5,1000,850)
 ];
 goToMap();
 function onMouseMove(event)
@@ -122,6 +124,14 @@ function onClick(event)
         }
         );
     }
+    else
+    {
+        checkBuy();
+    }
+}
+function checkBuy()
+{
+
 }
 function goToMap()
 {
@@ -130,10 +140,10 @@ function goToMap()
 function startLevel(level)
 {
     inMenu=false;
-    ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
+    ctx.reset();
     setInterval(function(){onTick(level)},50);
 }
-async function onTick(level)
+function onTick(level)
 {
     paintBackgroundLevel();
     if (level.duration>0&&level.enemyBasic>0)
@@ -160,21 +170,33 @@ function spawn(level)
     if (Math.random()<spawnOdds)
     {
         timeMult=(400-level.duration)/level.maxDuration*(level.maxTimeMult-1)+1;
-        console.log(level.duration,spawnOdds,level.enemyBasic);
+        console.log(level.duration,spawnOdds,level.timeLastSpawn);
         level.enemyBasic-=1;
+        level.timeLastSpawn=0;
         if (Math.random()>=.5)
             level.enemy.push(new EnemyBasic(Math.random()*1800.0,-50.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));
-        else 
-            level.enemy.push(new EnemyBasic(-50.0,Math.random()*850.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));  
+        else if (Math.random()>=.5)
+            level.enemy.push(new EnemyBasic(-50.0,Math.random()*600.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));  
+        else
+            level.enemy.push(new EnemyBasic(2000.0,Math.random()*600.0,1*level.damageMult*timeMult,2*level.speedMult,10*level.healthMult*timeMult));
     }
     level.timeLastSpawn+=.25;
     level.duration-=.05;
 }
 function paintBackgroundLevel()
 {
-    ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
+    ctx.reset();
+    if (buyMenu)
+    {
+        ctx.rect()
+    }
+    else
+    {
+        ctx.rect(1862,400,50,100);
+        ctx.fill();
+    }
     //draw background here
-
+   
 
     
     
