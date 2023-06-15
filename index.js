@@ -58,6 +58,11 @@ class Enemy
     {
         return Math.hypot(this.x-x,this.y-y)<this.size+range;
     }
+    checkDeath()
+    {
+        return this.health<=0;
+    }
+    is 
 }
 class EnemyBasic extends Enemy
 {
@@ -93,26 +98,43 @@ class Character
         );
         return bool;
     }
+    attacked(enemy)
+    {
+        this.health-=enemy.damage;
+        return this.health<=0;
+    }
+    mouseHovered()
+    {
+
+        ctx.beginPath();
+        ctx.globalAlpha =.4;
+        ctx.fillStyle="grey";
+        ctx.arc(this.x, this.y, this.attackRange, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle="black";
+        ctx.globalAlpha = 1;
+    }
     canAttack(enemys)
     {
         let possibleAttack=[]
+        if (this.coolDown<=0)
+        {
         enemys.forEach(enemy=>
         {
-            if (enemy.isWithin(this.x,this.y,this.attackRange)&&this.coolDown==0)
+            if (enemy.isWithin(this.x,this.y,this.attackRange))
             {
-                this.coolDown=this.attackSpeed;
                 possibleAttack.push(enemy);
             }
         });
-        if (possibleAttack>1)
-            possibleAttack.sort(function(enemy1,enemy2){Math.hypot(this.x-enemy1.x,this.y-enemy1.y)-Math.hypot(this.x-enemy2.x,this.y-enemy2.y)});
-        this.coolDown-=.02;
+        possibleAttack=possibleAttack.sort((enemy1,enemy2)=>{return Math.hypot(enemy1.x-this.x,enemy1.y-this.y)-Math.hypot(enemy2.x-this.x,enemy2.y-this.y);});
         if (this.coolDown<0)
             this.coolDown=0;
             if (possibleAttack.length>0){
                 this.coolDown=this.attackSpeed;
                 return possibleAttack[0];
             }
+        }
+        this.coolDown-=.02;
         return null;
     }
     
@@ -122,8 +144,10 @@ class Air1 extends Character
 {
     constructor(x,y)
     {
-        super(x,y,1,4,35,10,400);
+        super(x,y,1,4,35,4,400);
         this.cost=100;
+        this.pierce=2;
+        this.knockback=17;
     }
     paint()
     {
@@ -148,14 +172,16 @@ class Air1 extends Character
             moveY:Math.sin(dir)*25,
             x: this.x,
             y: this.y,
+            damage : this.damage,
             size : 50,
             avoid : [],
-            pierce : 3,
-            knockBackX : Math.cos(dir)*18,
-            knockBackY : Math.sin(dir)*18,
+            pierce : this.pierce,
+            knockBackX : Math.cos(dir)*this.knockback,
+            knockBackY : Math.sin(dir)*this.knockback,
             use : function(enemy){
                 enemy.knockBackX+=this.knockBackX;
                 enemy.knockBackY+=this.knockBackY;
+                enemy.health-=this.damage;
             },
             paint : function(){
                 ctx.beginPath();
@@ -241,8 +267,8 @@ let characterHover=null;
 goToMap();
 function onMouseMove(event)
 {
-    mouseX=event.clientX;
-    mouseY=event.clientY;
+    mouseX=event.clientX+8;
+    mouseY=event.clientY+8;
 }
 function onClick(event)
 {
@@ -281,13 +307,13 @@ function checkBuy(e)
         if (e.clientX-8>=1712&&e.clientX-8<=1762&&e.clientY-8>=375&&e.clientY-8<=525)//closeMenu
             buyMenu=false;
         
-        if (e.clientX-8>=1763&&e.clientX-8<=1812&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Earth 1
+        if (e.clientX-8>=1763&&e.clientX-8<=1812&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Air 1
             characterHover = new Air1(mouseX,mouseY);
 
-        if (e.clientX-8>=1813&&e.clientX-8<=1862&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Earth 2
+        if (e.clientX-8>=1813&&e.clientX-8<=1862&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Air 2
             characterHover = new Air2(mouseX,mouseY);
         
-        if (e.clientX-8>=1863&&e.clientX-8<=1912&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Earth 3
+        if (e.clientX-8>=1863&&e.clientX-8<=1912&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Air 3
             characterHover = new Air3(mouseX,mouseY);
     }
     else
@@ -309,6 +335,7 @@ function startLevel(level)
 function onTick(level)
 {
     paintBackgroundLevel();
+    mouseOverCharacter();
     if (level.duration>0&&level.enemyBasic>0)
         spawn(level);
     level.enemy.forEach(a=>moveEnemy(a,level));
@@ -319,6 +346,14 @@ function onTick(level)
     paintCharacters();
     paintProjectiles();
     paintMenu();
+}
+function mouseOverCharacter()
+{
+    characters.forEach(character=>{
+            if (Math.hypot(character.x-mouseX,character.y-mouseY)<character.size)
+                character.mouseHovered();
+        }
+    )
 }
 function paintProjectiles()
 {
@@ -336,7 +371,6 @@ function useProjectiles(level)
         if (p.x>c.clientWidth+100||p.y>c.clientHeight+100||p.x<-100||p.y<-100)
         {
             projectile.splice(projectile.indexOf(p),1);
-            console.log(p.x,p.y);
         }
     });
     //attacking
@@ -410,6 +444,8 @@ function paintCharacters()
 }
 function moveEnemy(enemy,level)
 {
+    if (enemy.checkDeath())
+        level.enemy.splice(level.enemy.indexOf(enemy),1);
     if (enemy.knockBackX>1)
         enemy.knockBackX-=1;
     else if (enemy.knockBackX<-1)
@@ -432,10 +468,19 @@ function moveEnemy(enemy,level)
     if (cc!=null&&Math.sqrt(Math.pow(enemy.y-cc.y,2)+Math.pow(enemy.x-cc.x,2))<225)//pull distance
         angle = Math.atan2(cc.y-enemy.y,cc.x-enemy.x);
     else
+    {
         angle = Math.atan2(level.targetY-enemy.y,level.targetX-enemy.x);
+        cc=null;
+    }    
     enemy.x+=enemy.speed*Math.cos(angle)+enemy.knockBackX;
     enemy.y+=enemy.speed*Math.sin(angle)+enemy.knockBackY;
-    
+    if (cc!=null&&enemy.isWithin(cc.x,cc.y,cc.size))
+    {
+        if (cc.attacked(enemy))
+            characters.splice(characters.indexOf(cc),1);
+        enemy.x-=enemy.speed*Math.cos(angle)*50;
+        enemy.y-=enemy.speed*Math.sin(angle)*50;
+    }
     if (enemy.isTouching(level.targetX,level.targetY))
     {
         live-=1;
@@ -452,11 +497,11 @@ function spawn(level)
         level.enemyBasic-=1;
         level.timeLastSpawn=0;
         if (Math.random()>=.5)
-            level.enemy.push(new EnemyBasic(Math.random()*1800.0,-50.0,1*level.damageMult*timeMult,.75*level.speedMult,10*level.healthMult*timeMult));
+            level.enemy.push(new EnemyBasic(Math.random()*1800.0,-50.0,2*level.damageMult*timeMult,.75*level.speedMult,10*level.healthMult*timeMult));
         else if (Math.random()>=.5)
-            level.enemy.push(new EnemyBasic(-50.0,Math.random()*600.0,1*level.damageMult*timeMult,.75*level.speedMult,10*level.healthMult*timeMult));  
+            level.enemy.push(new EnemyBasic(-50.0,Math.random()*600.0,2*level.damageMult*timeMult,.75*level.speedMult,10*level.healthMult*timeMult));  
         else
-            level.enemy.push(new EnemyBasic(2000.0,Math.random()*600.0,1*level.damageMult*timeMult,.75*level.speedMult,10*level.healthMult*timeMult));
+            level.enemy.push(new EnemyBasic(2000.0,Math.random()*600.0,2*level.damageMult*timeMult,.75*level.speedMult,10*level.healthMult*timeMult));
     }
     level.timeLastSpawn+=.08;
     level.duration-=.02;
