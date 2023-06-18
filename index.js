@@ -62,7 +62,6 @@ class Enemy
     {
         return this.health<=0;
     }
-    is 
 }
 class EnemyBasic extends Enemy
 {
@@ -145,7 +144,91 @@ class Character
     }
     
 }
-
+class Earth1 extends Character
+{
+    constructor(x,y)
+    {
+        super(x,y,2,3,35,10,200);
+        this.cost=200;
+        this.pierce=100;
+    }
+    paint()
+    {
+        if (this.hover)
+            ctx.globalAlpha =.4;
+        /*let img = new Image();
+        img.src="images/imageTest.png";
+        ctx.drawImage(img,this.x,this.y);
+        */
+       ctx.beginPath();
+        ctx.fillStyle="brown";
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle="black";
+    }
+    attack(enemy)
+    {
+        let dir = Math.atan2(enemy.y-this.y,enemy.x-this.x);
+        projectile.push({
+            x: this.x,
+            y: this.y,
+            cx : this.x,
+            cy : this.y,
+            damage : this.damage,
+            size : 75,
+            avoid : [],
+            pierce : this.pierce,
+            angle : 35*Math.PI/180.0,
+            attackAngle : Math.atan2(enemy.y-this.y,enemy.x-this.x),
+            delay : 15,
+            phase : 0,
+            knockback : 10,
+            use : function(enemy){
+                let dir = Math.atan2(enemy.y-this.y,enemy.x-this.x);
+                if (this.delay!=15)
+                {
+                    enemy.knockBackX=Math.cos(dir)*this.knockback;
+                    enemy.knockBackY=Math.sin(dir)*this.knockback;
+                }
+                enemy.health-=this.damage;
+            },
+            paint : function(){
+                ctx.beginPath();
+                ctx.globalAlpha =.5;
+                ctx.fillStyle="blue";
+                ctx.arc(this.x, this.y, this.size, this.attackAngle-this.angle, this.attackAngle+this.angle);
+                ctx.lineTo(this.x,this.y);
+                ctx.fill();
+                ctx.globalAlpha =1;
+                ctx.fillStyle="black";
+            },
+            other : function(enemy){
+                let dir = Math.atan2(enemy.y-this.y,enemy.x-this.x);
+                if (this.attackAngle-this.angle<dir&&this.attackAngle+this.angle>dir)
+                {
+                    if (this.delay==15)
+                    {
+                        enemy.knockBackX=Math.cos(dir)*this.knockback;
+                        enemy.knockBackY=Math.sin(dir)*this.knockback;
+                    }
+                    return true;
+                }
+                return false;
+            },
+            move : function(){
+                this.delay--;
+                if (this.delay==0)
+                {
+                    this.size+=50;
+                    this.phase++;
+                    this.delay+=15;
+                }
+                return this.phase==3;
+            }
+        });
+    }
+}
 class Air1 extends Character
 {
     constructor(x,y)
@@ -185,8 +268,8 @@ class Air1 extends Character
             knockBackX : Math.cos(dir)*this.knockback,
             knockBackY : Math.sin(dir)*this.knockback,
             use : function(enemy){
-                enemy.knockBackX+=this.knockBackX;
-                enemy.knockBackY+=this.knockBackY;
+                enemy.knockBackX=this.knockBackX;
+                enemy.knockBackY=this.knockBackY;
                 enemy.health-=this.damage;
             },
             paint : function(){
@@ -196,6 +279,14 @@ class Air1 extends Character
                 ctx.fill();
                 ctx.fillStyle="black";
             },
+            other : function(enemy){
+                return true;
+            },
+            move : function(){
+                this.x+=this.moveX;
+                this.y+=this.moveY;
+                return this.x>c.clientWidth+100||this.y>c.clientHeight+100||this.x<-100||this.y<-100;
+            }
         });
     }
 }
@@ -260,11 +351,15 @@ let inMenu=true;
 let mouseX=-1;
 let mouseY=-1;
 let live=10;
-let money=500000;
+let money=500;
 let buyMenu=false;
 let tickRate=.03;
 addEventListener("click",onClick);
 addEventListener("mousemove",onMouseMove);
+addEventListener("keydown",onKeyPress);
+
+
+
 let levels=[
     new Level(500,500,150,400.0,1,1,1,5,1000,850)
 ];
@@ -277,8 +372,14 @@ function onMouseMove(event)
     mouseX=event.clientX-8;
     mouseY=event.clientY-8;
 }
+function onKeyPress(event)
+{
+    if (event.keyCode==27)
+        characterHover=null;
+}
 function onClick(event)
 {
+    
     if (inMenu)
     {
         levels.forEach(a=>
@@ -293,7 +394,7 @@ function onClick(event)
     }
     else
     {
-        if (characterHover!=null)
+        if (!checkBuy(event)&&characterHover!=null)
         {
             if (characterHover.canPlace())
             {
@@ -304,30 +405,42 @@ function onClick(event)
 
             }
         }
-        checkBuy(event);
+        
     }
 }
 function checkBuy(e)
 {
     if (buyMenu)
     {
-        if (e.clientX-8>=1712&&e.clientX-8<=1762&&e.clientY-8>=375&&e.clientY-8<=525)//closeMenu
+        if (e.clientX-8>=1712&&e.clientX-8<=1762&&e.clientY-8>=375&&e.clientY-8<=525){//closeMenu
             buyMenu=false;
+            return true;
+        }
+        
+
         
         if (e.clientX-8>=1763&&e.clientX-8<=1812&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Air 1
             characterHover = new Air1(mouseX,mouseY);
-
-        if (e.clientX-8>=1813&&e.clientX-8<=1862&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Air 2
+        else if (e.clientX-8>=1763&&e.clientX-8<=1812&&e.clientY-8>=300&&e.clientY-8<=400&&money>=200)//buy Earth 1
+            characterHover = new Earth1(mouseX,mouseY);
+            
+        /*if (e.clientX-8>=1813&&e.clientX-8<=1862&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Air 2
             characterHover = new Air2(mouseX,mouseY);
         
         if (e.clientX-8>=1863&&e.clientX-8<=1912&&e.clientY-8>=400&&e.clientY-8<=500&&money>=100)//buy Air 3
             characterHover = new Air3(mouseX,mouseY);
+        */
+        if (e.clientX-8>=1763&&e.clientX-8<=1912&&e.clientY-8>=300&&e.clientY-8<=600)
+            return true;
     }
     else
     {
-        if (e.clientX-8>=1862&&e.clientX-8<=1912&&e.clientY-8>=375&&e.clientY-8<=525)//openMenu
+        if (e.clientX-8>=1862&&e.clientX-8<=1912&&e.clientY-8>=375&&e.clientY-8<=525){//openMenu
             buyMenu=true;
+            return true;
+        }
     }
+    return false;
 }
 function goToMap()
 {
@@ -373,9 +486,7 @@ function useProjectiles(level)
 {
     projectile.forEach(p=>
     {
-        p.x+=p.moveX;
-        p.y+=p.moveY;
-        if (p.x>c.clientWidth+100||p.y>c.clientHeight+100||p.x<-100||p.y<-100)
+        if (p.move())
         {
             projectile.splice(projectile.indexOf(p),1);
         }
@@ -385,12 +496,11 @@ function useProjectiles(level)
     {
             level.enemy.forEach(e=>
                 {
-                    if (e.isWithin(p.x,p.y,p.size)&&!p.avoid.includes(e))
+                    if (e.isWithin(p.x,p.y,p.size)&&p.other(e)&&!p.avoid.includes(e))
                     {
                         p.pierce-=1;
                         p.use(e);
                         p.avoid.push(e);
-
                     }
                 }
             );
@@ -452,7 +562,10 @@ function paintCharacters()
 function moveEnemy(enemy,level)
 {
     if (enemy.checkDeath())
+    {
         level.enemy.splice(level.enemy.indexOf(enemy),1);
+        money+=50;
+    }
     if (enemy.knockBackX>1)
         enemy.knockBackX-=1;
     else if (enemy.knockBackX<-1)
@@ -485,14 +598,16 @@ function moveEnemy(enemy,level)
     {
         if (cc.attacked(enemy))
             characters.splice(characters.indexOf(cc),1);
-        enemy.x-=enemy.speed*Math.cos(angle)*50;
-        enemy.y-=enemy.speed*Math.sin(angle)*50;
+        enemy.x-=enemy.speed*Math.cos(angle)*25;
+        enemy.y-=enemy.speed*Math.sin(angle)*25;
     }
     if (enemy.isTouching(level.targetX,level.targetY))
     {
         live-=1;
         level.enemy.splice(level.enemy.findIndex( a=> a==enemy),1);
     }
+    if (enemy.y+enemy.size>c.clientHeight)
+        enemy.y= c.clientHeight-enemy.size;
 }
 function spawn(level)
 {
